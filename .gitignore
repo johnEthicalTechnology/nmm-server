@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/*
+custom_authorizer/node_modules/*
+
+# Secrets
+.env
+.env.prod
+src/ormconfigProd.json
+
+# Built
+dist/*
+# **/*.js
+**/*.js.map
+.webpack/*
+.awcache
+
+
+# Misc
+**/*.zip
+.DS_Store
+
+
+# DB
+ormconfig.json
+
+# Serverless
+.serverless/*

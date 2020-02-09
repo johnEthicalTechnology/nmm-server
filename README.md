@@ -1,1 +1,1 @@
-# The Amazing & Wonder Project NMM
+# The Amazing & Wonderful Project NMM

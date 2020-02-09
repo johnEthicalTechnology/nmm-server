@@ -1,0 +1,12 @@
+Type: AWS::EC2::NatGateway
+Properties:
+  AllocationId:
+    Fn::GetAtt:
+      - EipNATPublic
+      - AllocationId
+  SubnetId:
+    Ref: SubnetAzAPublic
+  Tags:
+    -
+      Key: Name
+      Value: NmmNatGatewaySubnetAzAPublic

@@ -1,0 +1,30 @@
+{
+  "extends": [
+      "prettier",
+      "prettier/@typescript-eslint"
+  ],
+  "plugins": [
+      "@typescript-eslint",
+      "prettier"
+  ],
+  "rules": {
+      "prettier/prettier": [
+          "error",
+          {
+              "semi": false,
+              "singleQuote": true,
+              "function-call-argument-newline": "consistent",
+              "array-element-newline": "consistent"
+          }
+      ],
+      "curly": [
+        "error",
+        "multi"
+      ],
+      "camelcase": 2
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+      "sourceType": "module"
+  }
+}

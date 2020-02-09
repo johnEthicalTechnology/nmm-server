@@ -1,0 +1,146 @@
+service: no-meat-may-app
+
+plugins:
+  - serverless-webpack
+  - serverless-dotenv-plugin
+  - serverless-cloudside-plugin
+  - serverless-offline
+
+custom:
+  webpack:
+    webpackConfig: 'webpack.config.js'   # Name of webpack configuration file
+    includeModules: true   # Node modules configuration for packaging
+    excludeFiles: src/**/*.test.js # Provide a glob for files to ignore
+  serverless-offline:
+    port: 4000
+  AWS_ACCOUNT: 592363304474
+  DB_HOST:
+    Fn::GetAtt: [PostgreSqlRDSInstance, Endpoint.Address]
+  VPC_CIDR: 10
+  ENV: ${opt:env, 'dev'}
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: ${opt:env, 'dev'}
+  role: LambdaRole
+  region: ap-southeast-2
+  cfnRole: arn:aws:iam::592363304474:role/nmm-serverless-deploy-role
+  timeout: 30
+  logRetentionInDays: 14
+  # Guesstimate - AWS recommends load testing &
+  # checking MAX MEMORY USED to adjust the size
+  memorySize: 512
+  endpointType: regional
+  environment:
+    DB_HOST: ${opt:LOCAL_DB_HOST, self:custom.DB_HOST}
+    ENV: ${self:custom.ENV}
+
+layers:
+  graphql:
+    package:
+      artifact: lambda_layers/graphql_node_modules.zip
+
+package:
+  exclude:
+    - node_modules/**
+
+# Raw AWS CloudFormation goes here
+resources:
+  Resources:
+    LambdaRole: ${file(./serverlessResources/LambdaRole.yml)}
+    # VPC
+    VPC: ${file(./serverlessResources/VPC.yml)}
+    InternetGateway: ${file(./serverlessResources/InternetGateway.yml)}
+    InternetGatewayAssociation: ${file(./serverlessResources/InternetGatewayAssociation.yml)}
+    # Security Groups
+    SecurityGroupLambda: ${file(./serverlessResources/SecurityGroupLambda.yml)}
+    SecurityGroupBastion: ${file(./serverlessResources/SecurityGroupBastion.yml)}
+    SecurityGroupAPIGWToVPC: ${file(./serverlessResources/SecurityGroupAPIGWToVPC.yml)}
+    # REGION A
+    #Pubilc
+    SubnetAzAPublic: ${file(./serverlessResources/SubnetAzAPublic.yml)}
+    RouteTableSubnetPublic: ${file(./serverlessResources/RouteTableSubnetPublic.yml)}
+    RouteSubnetPublic: ${file(./serverlessResources/RouteSubnetPublic.yml)}
+    RouteTableAssociationSubnetPublic: ${file(./serverlessResources/RouteTableAssociationSubnetPublic.yml)}
+    NATPublic: ${file(./serverlessResources/NATPublic.yml)}
+    EipNATPublic: ${file(./serverlessResources/EipNATPublic.yml)}
+    # Private
+    SubnetAzAPrivate: ${file(./serverlessResources/SubnetAzAPrivate.yml)}
+    RouteTableSubnetPrivate: ${file(./serverlessResources/RouteTableSubnetPrivate.yml)}
+    RouteSubnetPrivate: ${file(./serverlessResources/RouteSubnetPrivate.yml)}
+    RouteTableAssociationSubnetPrivate: ${file(./serverlessResources/RouteTableAssociationSubnetPrivate.yml)}
+
+    # REGION C
+    # Public
+    SubnetAzCPublic: ${file(./serverlessResources/SubnetAzCPublic.yml)}
+    RouteTableSubnetPublicC: ${file(./serverlessResources/RouteTableSubnetPublicC.yml)}
+    RouteSubnetPublicC: ${file(./serverlessResources/RouteSubnetPublicC.yml)}
+    RouteTableAssociationSubnetPublicC: ${file(./serverlessResources/RouteTableAssociationSubnetPublicC.yml)}
+    NATPublicC: ${file(./serverlessResources/NATPublicC.yml)}
+    EipNATPublicC: ${file(./serverlessResources/EipNATPublicC.yml)}
+    # Private
+    SubnetAzCPrivate: ${file(./serverlessResources/SubnetAzCPrivate.yml)}
+    RouteTableSubnetPrivateC: ${file(./serverlessResources/RouteTableSubnetPrivateC.yml)}
+    RouteSubnetPrivateC: ${file(./serverlessResources/RouteSubnetPrivateC.yml)}
+    RouteTableAssociationSubnetPrivateC: ${file(./serverlessResources/RouteTableAssociationSubnetPrivateC.yml)}
+    # RDS instance
+    PostgreSqlRDSInstance: ${file(./serverlessResources/PostgreSqlRDSInstance.yml)}
+    SubnetGroup: ${file(./serverlessResources/SubnetGroup.yml)}
+    SecurityGroupLambdaToRDS: ${file(./serverlessResources/SecurityGroupLambdaToRDS.yml)}
+    SecurityGroupBastionToRDS: ${file(./serverlessResources/SecurityGroupBastionToRDS.yml)}
+
+
+
+functions:
+  graphql:
+    handler: src/lambda.graphql
+    events:
+    - http:
+        path: nmm-app
+        method: post
+        cors:
+          origin: ${opt:secureOrigin, 'http://localhost:3000'}
+          headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - access-control-allow-origin
+              - apollographql-client-name
+              - apollographql-client-version
+          allowCredentials: true
+    - http:
+        path: nmm-app
+        method: get
+        cors:
+          origin: ${opt:secureOrigin, 'http://localhost:3000'}
+          headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - access-control-allow-origin
+              - apollographql-client-name
+              - apollographql-client-version
+          allowCredentials: true
+    - http:
+        path: playground
+        method: get
+        cors: true
+    - http:
+        path: playground
+        method: post
+        cors: true
+    vpc:
+      securityGroupIds:
+        - !GetAtt SecurityGroupLambda.GroupId
+      subnetIds:
+        - Ref: SubnetAzAPrivate
+    layers:
+    # Name = <name of layer>LambdaLayer
+      - { Ref: GraphqlLambdaLayer }

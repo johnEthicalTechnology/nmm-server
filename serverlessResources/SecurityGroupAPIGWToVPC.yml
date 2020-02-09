@@ -1,0 +1,15 @@
+DependsOn: VPC
+Type: AWS::EC2::SecurityGroup
+Properties:
+  GroupDescription: SecurityGroup for APIGW to VPC
+  VpcId:
+    Ref: VPC
+  SecurityGroupIngress:
+    - IpProtocol: tcp
+      SourceSecurityGroupId: !GetAtt SecurityGroupLambda.GroupId
+      FromPort: 443
+      ToPort: 443
+  Tags:
+    -
+      Key: Name
+      Value: NmmApigwToVpc

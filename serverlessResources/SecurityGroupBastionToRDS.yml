@@ -1,0 +1,15 @@
+DependsOn: VPC
+Type: AWS::EC2::SecurityGroup
+Properties:
+  GroupDescription: SecurityGroup for Bastion to RDS
+  VpcId:
+    Ref: VPC
+  SecurityGroupIngress:
+    - IpProtocol: tcp
+      SourceSecurityGroupId: !GetAtt SecurityGroupBastion.GroupId
+      ToPort: '5432'
+      FromPort: '5432'
+  Tags:
+    -
+      Key: Name
+      Value: NMMBastionToRDSSecurityGroup
