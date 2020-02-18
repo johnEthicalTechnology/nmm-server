@@ -27,6 +27,24 @@ export default class RecipeAPI implements IRecipeAPI {
     this.context = config.context
   }
 
+  public async findAllRecipes() {
+    const db = await this.database.getConnection()
+    const recipes = await db.getRepository(RecipeEntity).find()
+
+    return recipes
+  }
+
+  public async findAttribution(id: number, name: string) {
+    const db = await this.database.getConnection()
+    const attribution = await db
+      .getRepository(RecipeAttributionEntity)
+      .findOne({
+        where: [{ id }, { name }]
+      })
+
+    return attribution
+  }
+
   public async findRecipe(id: number, title: string) {
     const db = await this.database.getConnection()
     const recipe = await db.getRepository(RecipeEntity).findOne({
@@ -41,22 +59,38 @@ export default class RecipeAPI implements IRecipeAPI {
     return recipe
   }
 
-  public async findAttribution(id: number, name: string) {
+
+  public async deleteRecipe(id: number, title: string): Promise<any> {
     const db = await this.database.getConnection()
-    const attribution = await db
-      .getRepository(RecipeAttributionEntity)
-      .findOne({
-        where: [{ id }, { name }]
+    const recipeToDelete = await db.getRepository(RecipeEntity).findOne({
+      where: [{ id }, { title }]
+    })
+
+    if (!recipeToDelete)
+      throw new UserInputError(
+        `The recipe with title "${title}" or "${id}" doesn't exist. Have go mate!`
+      )
+
+    const countRecipesToAttribution = await db
+      .getRepository(RecipeEntity)
+      .findAndCount({
+        where: { recipeAttributionId: recipeToDelete.recipeAttributionId }
       })
 
-    return attribution
-  }
+    const LAST_AND_ONLY_RECIPE = 1
+    const INDEX_FOR_COUNT = 1
+    if (countRecipesToAttribution[INDEX_FOR_COUNT] == LAST_AND_ONLY_RECIPE) {
+      const recipeAttribution = await db
+        .getRepository(RecipeAttributionEntity)
+        .find({ id: recipeToDelete.recipeAttributionId })
+      await db.getRepository(RecipeAttributionEntity).remove(recipeAttribution)
+    }
 
-  public async findAllRecipes() {
-    const db = await this.database.getConnection()
-    const recipes = await db.getRepository(RecipeEntity).find()
+    const deletedRecipe = await db
+      .getRepository(RecipeEntity)
+      .remove(recipeToDelete)
 
-    return recipes
+    return deletedRecipe
   }
 
   public async createRecipe({
@@ -87,7 +121,6 @@ export default class RecipeAPI implements IRecipeAPI {
         `The title "${duplicateRecipe.title}" is taken by another recipe. Change the title and/or delete recipe number ${duplicateRecipe.id}`
       )
 
-    // TODO - add logic to prevent recipe with same name being created
     let recipe = new RecipeEntity()
     recipe.title = title
     recipe.ingredients = ingredients
@@ -120,26 +153,5 @@ export default class RecipeAPI implements IRecipeAPI {
     const savedRecipe = await db.getRepository(RecipeEntity).save(recipe)
 
     return savedRecipe
-  }
-
-  public async deleteRecipe(id: number, title: string): Promise<any> {
-    const db = await this.database.getConnection()
-    const recipeToDelete = await db.getRepository(RecipeEntity).findOne({
-      where: [{ id }, { title }]
-    })
-
-    if (!recipeToDelete)
-      throw new UserInputError(
-        `The recipe with title "${title}" or "${id}" doesn't exist. Have go mate!`
-      )
-
-    const deletedRecipe = await db
-      .getRepository(RecipeEntity)
-      .remove(recipeToDelete)
-    await db
-      .getRepository(RecipeAttributionEntity)
-      .remove(recipeToDelete.recipeAttribution)
-
-    return deletedRecipe
   }
 }

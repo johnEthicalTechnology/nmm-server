@@ -49,7 +49,7 @@ export default gql`
     "**LIST**"
     lowResolution: String!
     "**SHOW**"
-    recipeAttribution: RecipeAttribution!
+    recipeAttribution: RecipeAttribution
     ingredients: [String!]!
     method: [String!]!
     standardResolution: String!
@@ -57,9 +57,9 @@ export default gql`
 
   type RecipeAttribution {
     id: ID
-    name: String!
+    name: String
     website: String
-    email: String!
+    email: String
     facebook: String
     instagram: String
     twitter: String

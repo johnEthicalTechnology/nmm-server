@@ -7,7 +7,7 @@ const server = container.get<IServer>(TYPES.Server)
 
 export const graphql = server.getApolloInstance().createHandler({
   cors: {
-    origin: true,
+    origin: process.env.CLIENT_URL,
     credentials: true
   }
 })

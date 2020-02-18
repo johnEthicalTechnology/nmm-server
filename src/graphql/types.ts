@@ -81,24 +81,11 @@ export enum MotivationsEnum {
 
 export type Mutation = {
    __typename?: 'Mutation',
-  createArticles?: Maybe<Array<Maybe<Article>>>,
-  createArticle?: Maybe<Article>,
   createUserProfile?: Maybe<UserProfile>,
   createRecipe?: Maybe<Recipe>,
   deleteRecipe?: Maybe<Recipe>,
   createOrUpdateChallenge?: Maybe<Challenge>,
 };
-
-
-export type MutationCreateArticlesArgs = {
-  articles: Array<Maybe<CreateArticle>>
-};
-
-
-export type MutationCreateArticleArgs = {
-  article: CreateArticle
-};
-
 
 export type MutationCreateUserProfileArgs = {
   userProfileInput?: Maybe<UserProfileInput>
@@ -111,7 +98,10 @@ export type MutationCreateRecipeArgs = {
 
 
 export type MutationDeleteRecipeArgs = {
-  title?: Maybe<Scalars['String']>
+  deleteSecret: Scalars['String'],
+  recipeId?: Maybe<Scalars['Int']>,
+  recipeTitle?: Maybe<Scalars['String']>
+
 };
 
 
@@ -124,7 +114,6 @@ export type Query = {
   challenge?: Maybe<Challenge>,
   recipes: Array<Maybe<Recipe>>,
   recipe: Recipe,
-  articles?: Maybe<Array<Maybe<Article>>>,
   me?: Maybe<UserProfile>,
 };
 
@@ -156,7 +145,7 @@ export type Recipe = {
   /** **LIST** */
   lowResolution: Scalars['String'],
   /** **SHOW** */
-  recipeAttribution: RecipeAttribution,
+  recipeAttribution?: Maybe<RecipeAttribution>,
   ingredients: Array<Scalars['String']>,
   method: Array<Scalars['String']>,
   standardResolution: Scalars['String'],
@@ -165,9 +154,9 @@ export type Recipe = {
 export type RecipeAttribution = {
    __typename?: 'RecipeAttribution',
   id?: Maybe<Scalars['ID']>,
-  name: Scalars['String'],
+  name?: Maybe<Scalars['String']>,
   website?: Maybe<Scalars['String']>,
-  email: Scalars['String'],
+  email?: Maybe<Scalars['String']>,
   facebook?: Maybe<Scalars['String']>,
   instagram?: Maybe<Scalars['String']>,
   twitter?: Maybe<Scalars['String']>,

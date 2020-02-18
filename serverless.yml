@@ -49,14 +49,6 @@ package:
 resources:
   Resources:
     LambdaRole: ${file(./serverlessResources/LambdaRole.yml)}
-    # VPC
-    VPC: ${file(./serverlessResources/VPC.yml)}
-    InternetGateway: ${file(./serverlessResources/InternetGateway.yml)}
-    InternetGatewayAssociation: ${file(./serverlessResources/InternetGatewayAssociation.yml)}
-    # Security Groups
-    SecurityGroupLambda: ${file(./serverlessResources/SecurityGroupLambda.yml)}
-    SecurityGroupBastion: ${file(./serverlessResources/SecurityGroupBastion.yml)}
-    SecurityGroupAPIGWToVPC: ${file(./serverlessResources/SecurityGroupAPIGWToVPC.yml)}
     # REGION A
     #Pubilc
     SubnetAzAPublic: ${file(./serverlessResources/SubnetAzAPublic.yml)}
@@ -70,7 +62,6 @@ resources:
     RouteTableSubnetPrivate: ${file(./serverlessResources/RouteTableSubnetPrivate.yml)}
     RouteSubnetPrivate: ${file(./serverlessResources/RouteSubnetPrivate.yml)}
     RouteTableAssociationSubnetPrivate: ${file(./serverlessResources/RouteTableAssociationSubnetPrivate.yml)}
-
     # REGION C
     # Public
     SubnetAzCPublic: ${file(./serverlessResources/SubnetAzCPublic.yml)}
@@ -89,8 +80,99 @@ resources:
     SubnetGroup: ${file(./serverlessResources/SubnetGroup.yml)}
     SecurityGroupLambdaToRDS: ${file(./serverlessResources/SecurityGroupLambdaToRDS.yml)}
     SecurityGroupBastionToRDS: ${file(./serverlessResources/SecurityGroupBastionToRDS.yml)}
-
-
+    # BASTION
+    BastionMainLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: NMMBastionLogGroup
+    BastionPolicyRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: NMMBastionRole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Principal:
+                Service: ec2.amazonaws.com
+    BastionHostPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName: BastionPolicy
+        Roles:
+          - Ref: BastionPolicyRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:GetLogEvents
+                - logs:PutLogEvents
+                - logs:DescribeLogGroups
+                - logs:DescribeLogStreams
+                - logs:PutRetentionPolicy
+                - logs:PutMetricFilter
+                - logs:CreateLogGroup
+              Resource:
+                - arn:aws:logs:${self:provider.region}:${self:custom.AWS_ACCOUNT}:log-group:NMMBastionLogGroup:*
+            - Effect: Allow
+              Action:
+                - ec2:AssociateAddress
+                - ec2:DescribeAddresses
+              Resource: '*'
+    BastionHostProfile:
+      DependsOn: BastionHostPolicy
+      Type: AWS::IAM::InstanceProfile
+      Properties:
+        Roles:
+          - Ref: BastionPolicyRole
+    BastionAutoScalingGroup:
+      DependsOn: VPC
+      Type: AWS::AutoScaling::AutoScalingGroup
+      Properties:
+        AutoScalingGroupName: NMMBastionAutoScale
+        LaunchConfigurationName:
+          Ref: BastionLaunchConfiguration
+        VPCZoneIdentifier:
+          - Ref: SubnetAzAPublic
+          - Ref: SubnetAzCPublic
+        MinSize: '0'
+        MaxSize: '0'
+        Cooldown: '300'
+        DesiredCapacity: '0'
+        Tags:
+          - Key: Name
+            Value: NMMBastionAutoScale
+            PropagateAtLaunch: true
+    BastionLaunchConfiguration:
+      DependsOn: VPC
+      Type: AWS::AutoScaling::LaunchConfiguration
+      Properties:
+        AssociatePublicIpAddress: true
+        KeyName: nmmBastionKeyPair
+        IamInstanceProfile:
+          Ref: BastionHostProfile
+        ImageId: ami-0b8b10b5bf11f3a22
+        SecurityGroups:
+          - Fn::GetAtt: SecurityGroupBastion.GroupId
+        InstanceType: t2.micro
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: '10'
+              VolumeType: gp2
+              Encrypted: true
+              DeleteOnTermination: true
+    # VPC
+    VPC: ${file(./serverlessResources/VPC.yml)}
+    InternetGateway: ${file(./serverlessResources/InternetGateway.yml)}
+    InternetGatewayAssociation: ${file(./serverlessResources/InternetGatewayAssociation.yml)}
+    # Security Groups
+    SecurityGroupLambda: ${file(./serverlessResources/SecurityGroupLambda.yml)}
+    SecurityGroupBastion: ${file(./serverlessResources/SecurityGroupBastion.yml)}
+    SecurityGroupAPIGWToVPC: ${file(./serverlessResources/SecurityGroupAPIGWToVPC.yml)}
 
 functions:
   graphql:
@@ -141,6 +223,8 @@ functions:
         - !GetAtt SecurityGroupLambda.GroupId
       subnetIds:
         - Ref: SubnetAzAPrivate
+        - Ref: SubnetAzCPrivate
+
     layers:
     # Name = <name of layer>LambdaLayer
       - { Ref: GraphqlLambdaLayer }
