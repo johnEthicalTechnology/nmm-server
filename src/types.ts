@@ -13,6 +13,10 @@ import {
 } from './graphql/types'
 import { LambdaLog } from 'lambda-log'
 
+export interface ExtendedAPIGatewayProxyEvent extends APIGatewayProxyEvent {
+  source: any
+}
+
 export interface IEnvs {
   audience: string
   issuer: string
@@ -29,11 +33,11 @@ export interface IDatabase {
 
 export interface ILogger {
   getLogger(): LambdaLog
-  createContext(arg0?: APIGatewayProxyEvent, arg1?: Context): void
+  createContext(arg0?: ExtendedAPIGatewayProxyEvent, arg1?: Context): void
 }
 
 export interface IResolverContext {
-  event: APIGatewayProxyEvent
+  event: ExtendedAPIGatewayProxyEvent
   log: LambdaLog
   auth: IAuthorisation
   // TODO - fix the any type
@@ -77,7 +81,8 @@ export interface IScopeAndId {
 
 export interface IAuthorisation {
   checkScopesAndResolve(
-    arg0: APIGatewayProxyEvent,
+    arg0: ExtendedAPIGatewayProxyEvent,
+
     arg1: Array<string>,
     arg3?: LambdaLog
   ): Promise<string>

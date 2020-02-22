@@ -5,21 +5,21 @@ export default {
   Query: {
     me: async (
       _: any,
-      { id }: { id: string },
+      { userProfileId }: { userProfileId: string },
       { auth, dataSources, log, event }: IResolverContext
     ): Promise<UserProfile> => {
       try {
-        log.info(`Authorising user ${id}...`)
-        const verifiedUserId = await auth.checkScopesAndResolve(event, [
+        log.info(`Authorising user ${userProfileId}...`)
+        const verifiedUserProfileId = await auth.checkScopesAndResolve(event, [
           'profile'
         ])
-        log.info(`Authorisation of user ${verifiedUserId} successful!`)
+        log.info(`Authorisation of user ${verifiedUserProfileId} successful!`)
         const userProfile = await dataSources.userProfileAPI.findUserProfile(
-          verifiedUserId
+          verifiedUserProfileId
         )
         return userProfile
       } catch (error) {
-        log.error(`Couldn't find user: ${error}`)
+        log.error(`Couldn't find user profile: ${error}`)
         return error
       }
     }

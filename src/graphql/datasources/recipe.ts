@@ -59,7 +59,6 @@ export default class RecipeAPI implements IRecipeAPI {
     return recipe
   }
 
-
   public async deleteRecipe(id: number, title: string): Promise<any> {
     const db = await this.database.getConnection()
     const recipeToDelete = await db.getRepository(RecipeEntity).findOne({

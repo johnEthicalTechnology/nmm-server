@@ -7,6 +7,6 @@ export default gql`
     challenge(recipeId: ID!): Challenge
     recipes: [Recipe]!
     recipe(recipeId: ID, recipeTitle: String): Recipe!
-    me(id: String!): UserProfile
+    me(userProfileId: String!): UserProfile
   }
 `

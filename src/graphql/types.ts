@@ -101,7 +101,6 @@ export type MutationDeleteRecipeArgs = {
   deleteSecret: Scalars['String'],
   recipeId?: Maybe<Scalars['Int']>,
   recipeTitle?: Maybe<Scalars['String']>
-
 };
 
 

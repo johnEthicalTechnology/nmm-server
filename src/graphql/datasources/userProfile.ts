@@ -57,11 +57,15 @@ export default class UserProfileAPI implements IUserProfileAPI {
     } = userProfileInput
     const db = await this.database.getConnection()
 
+    // TODO - make sure they their point's aren't reset when
+    // they update their profile or they don't cheat and just continually
+    // update their profile to get points.
     const calculatedPoints = this.calculatePoints.calculate(
       userProfileInput,
       challengeType
     )
-
+    // TODO - fix up so if user updates their profile later they'll get
+    // points for completing it
     let userProfile = new UserProfileEntity()
     userProfile.id = id as string
     userProfile.motivations = motivations

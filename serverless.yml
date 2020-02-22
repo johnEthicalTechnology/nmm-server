@@ -1,12 +1,19 @@
 service: no-meat-may-app
 
 plugins:
+  - serverless-plugin-warmup
   - serverless-webpack
   - serverless-dotenv-plugin
   - serverless-cloudside-plugin
   - serverless-offline
 
 custom:
+  warmup:
+    folderName: 'noMeatMayWarmupLambda'
+    name: 'noMeatMayWarmupLambda'
+    tags:
+      name: 'noMeatMayWarmup'
+      env: 'prod'
   webpack:
     webpackConfig: 'webpack.config.js'   # Name of webpack configuration file
     includeModules: true   # Node modules configuration for packaging
@@ -32,6 +39,12 @@ provider:
   # checking MAX MEMORY USED to adjust the size
   memorySize: 512
   endpointType: regional
+  vpc:
+    securityGroupIds:
+      - !GetAtt SecurityGroupLambda.GroupId
+    subnetIds:
+      - Ref: SubnetAzAPrivate
+      - Ref: SubnetAzCPrivate
   environment:
     DB_HOST: ${opt:LOCAL_DB_HOST, self:custom.DB_HOST}
     ENV: ${self:custom.ENV}
@@ -218,13 +231,8 @@ functions:
         path: playground
         method: post
         cors: true
-    vpc:
-      securityGroupIds:
-        - !GetAtt SecurityGroupLambda.GroupId
-      subnetIds:
-        - Ref: SubnetAzAPrivate
-        - Ref: SubnetAzCPrivate
-
+    warmup:
+      enabled: prod
     layers:
     # Name = <name of layer>LambdaLayer
       - { Ref: GraphqlLambdaLayer }
