@@ -1,4 +1,5 @@
 const { gql } = require('apollo-server-lambda')
+import { MealTypeEnum } from '../types'
 
 export default gql`
   type Query {
@@ -7,6 +8,7 @@ export default gql`
     challenge(recipeId: ID!): Challenge
     recipes: [Recipe]!
     recipe(recipeId: ID, recipeTitle: String): Recipe!
+    recipesByMealType(mealType: MealTypeEnum!): [Recipe]!
     me(userProfileId: String!): UserProfile
   }
 `

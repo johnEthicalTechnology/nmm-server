@@ -5,6 +5,7 @@ import RecipeEntity from '../../db/entities/Recipe'
 import { RecipeAttribution } from '../types'
 
 import { ForbiddenError } from 'apollo-server-lambda'
+import { MealTypeEnum } from '../types'
 
 export default {
   Query: {
@@ -30,15 +31,36 @@ export default {
       )
       log.info(`Found all recipe no. ${recipe.id}`)
       return recipe
+    },
+    recipesByMealType: async (
+      _: any,
+      { mealType }: { mealType: MealTypeEnum },
+      { dataSources, log }: IResolverContext
+    ): Promise<Array<Recipe>> => {
+      try {
+        console.log(`Finding recipes of ${mealType} meal type`)
+        const recipesMealType = await dataSources.recipeAPI.findRecipesByMealType(
+          mealType
+        )
+        console.log(`Found some recipes of ${mealType} meal type`)
+        return recipesMealType
+      } catch (error) {
+        throw error
+      }
     }
   },
   Mutation: {
     createRecipe: async (
       _: any,
-      { recipe }: { recipe: RecipeInput },
+      { recipe, createSecret }: { recipe: RecipeInput; createSecret: string },
       { dataSources, log }: IResolverContext
     ): Promise<Recipe> => {
       try {
+        const authToCreate = createSecret == process.env.CREATE_SECRET
+        if (!authToCreate)
+          throw new ForbiddenError(
+            'You are not allowed to create a recipe! Begone!'
+          )
         log.info('Creating recipe')
         const createdRecipe = await dataSources.recipeAPI.createRecipe(recipe)
         log.info('Recipe created')

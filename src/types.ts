@@ -3,7 +3,6 @@ import { ApolloServer } from 'apollo-server-lambda'
 import { DataSource, DataSourceConfig } from 'apollo-datasource'
 import { APIGatewayProxyEvent, Context } from 'aws-lambda'
 import {
-  Challenge,
   ChallengeInput,
   Recipe,
   UserProfile,
@@ -11,7 +10,9 @@ import {
   RecipeAttribution,
   TypeEnum
 } from './graphql/types'
+import ChallengeEntity from './db/entities/Challenge'
 import { LambdaLog } from 'lambda-log'
+import { MealTypeEnum } from './graphql/types'
 
 export interface ExtendedAPIGatewayProxyEvent extends APIGatewayProxyEvent {
   source: any
@@ -42,6 +43,10 @@ export interface IResolverContext {
   auth: IAuthorisation
   // TODO - fix the any type
   dataSources: any
+}
+
+export interface IUserProfileId {
+  userProfileId: string
 }
 
 // AUTHORISATION
@@ -82,7 +87,6 @@ export interface IScopeAndId {
 export interface IAuthorisation {
   checkScopesAndResolve(
     arg0: ExtendedAPIGatewayProxyEvent,
-
     arg1: Array<string>,
     arg3?: LambdaLog
   ): Promise<string>
@@ -100,24 +104,32 @@ export interface IRecipeAPI extends DataSource {
     arg1?: string
   ): Promise<RecipeAttribution | undefined>
   findAllRecipes(): Promise<Array<Recipe>>
+  findRecipesByMealType(arg0: MealTypeEnum): Promise<Array<Recipe>>
   createRecipe(args: any): Promise<Recipe>
   deleteRecipe(arg0?: number, arg1?: string): Promise<Recipe>
 }
 
 export interface IUserProfileAPI extends DataSource {
-  createUserProfile(arg0: UserProfileInput, arg1?: string): Promise<UserProfile>
+  createOrUpdateUserProfile(
+    arg0: UserProfileInput,
+    arg1?: string
+  ): Promise<UserProfile | ChallengeEntity>
   findUserProfile(arg0: string, arg1?: string): Promise<UserProfile | undefined>
   initialize(arg0?: DataSourceConfig<any>): void
   closeDbConnection(): void
+  deleteUserProfile(arg0: string): Promise<string>
 }
 
 export interface IChallengeAPI extends DataSource {
-  findChallenge(arg0: number, arg1: string): Promise<Challenge | undefined>
+  findChallenge(
+    arg0: number,
+    arg1: string
+  ): Promise<ChallengeEntity | undefined>
   createOrUpdateChallenge(
     arg0: ChallengeInput,
     arg1: TypeEnum,
     arg2: string
-  ): Promise<Challenge>
+  ): Promise<ChallengeEntity>
   closeDbConnection(): void
   initialize(arg0?: DataSourceConfig<any>): void
 }
@@ -125,7 +137,10 @@ export interface IChallengeAPI extends DataSource {
 export interface ICalculatePoints {
   calculate(
     arg0: ChallengeInput | UserProfileInput,
-    arg1: string,
-    arg2?: number
-  ): number
+    arg1: ChallengeEntity,
+    arg2: string
+  ): {
+    updatedChallenge: ChallengeEntity
+    amountToAddToUserProfile: number
+  }
 }

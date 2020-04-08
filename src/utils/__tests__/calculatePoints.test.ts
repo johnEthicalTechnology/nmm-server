@@ -21,7 +21,7 @@ describe('CalculatePoints class', () => {
       it('RETURNS - partial points for [PARTIAL COMPLETION]', () => {
         const calculatedPoints = calculatePoints.calculate(
           mockMinUserProfileInput,
-          'createUserProfile'
+          'createOrUpdateUserProfile'
         )
         const mockPartialTotalPoints = 40
 
@@ -31,7 +31,7 @@ describe('CalculatePoints class', () => {
       it('RETURNS - full points for [COMPLETE] user profile', () => {
         const calculatedPoints = calculatePoints.calculate(
           mockMaxUserProfileInput,
-          'createUserProfile'
+          'createOrUpdateUserProfile'
         )
 
         expect(calculatedPoints).toEqual(mockMaxTotalPoints)

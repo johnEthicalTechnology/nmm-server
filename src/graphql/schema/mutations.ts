@@ -6,9 +6,9 @@ export default gql`
     # createArticles(articles: [CreateArticle]!): [Article]
     # createArticle(article: CreateArticle!): Article
 
-    createUserProfile(userProfileInput: UserProfileInput): UserProfile
+    createOrUpdateUserProfile(userProfileInput: UserProfileInput): UserProfile
 
-    createRecipe(recipe: RecipeInput): Recipe
+    createRecipe(recipe: RecipeInput, createSecret: String!): Recipe
     deleteRecipe(
       deleteSecret: String!
       recipeId: Int
@@ -16,5 +16,7 @@ export default gql`
     ): Recipe
 
     createOrUpdateChallenge(challengeInput: ChallengeInput): Challenge
+
+    deleteUserProfile(userProfileId: String!): UserProfile
   }
 `

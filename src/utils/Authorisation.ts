@@ -42,6 +42,8 @@ export class Authorisation implements IAuthorisation {
 
   private extractBearerToken(event: APIGatewayProxyEvent): string {
     const tokenString = event.headers.authorization
+    console.info('Authorisation - tokenString', tokenString)
+
     if (!tokenString)
       throw new ForbiddenError(
         'Expected "event.headers.authorization" parameter to be set'

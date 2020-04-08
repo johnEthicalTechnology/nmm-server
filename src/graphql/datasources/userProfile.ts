@@ -1,8 +1,12 @@
 import { injectable, inject } from 'inversify'
+import { ManagementClient } from 'auth0'
 // DB Entities
 import UserProfileEntity from '../../db/entities/UserProfile'
+import ChallengeEntity, {
+  SectionsCompletedEnum
+} from '../../db/entities/Challenge'
 // TYPES
-import { UserProfileInput } from '../types'
+import { UserProfileInput, TypeEnum } from '../types'
 import { TYPES } from '../../inversifyTypes'
 import { IUserProfileAPI, IDatabase, ICalculatePoints } from '../../types'
 import { DataSourceConfig } from 'apollo-datasource'
@@ -30,8 +34,39 @@ export default class UserProfileAPI implements IUserProfileAPI {
     this.context = config.context
   }
 
+  public async deleteUserProfile(userProfileId: string) {
+    const db = await this.database.getConnection()
+    const checkSavedUserProfile = await db
+      .getRepository(UserProfileEntity)
+      .findOne({
+        where: {
+          id: userProfileId
+        }
+      })
+    console.info('checkSavedUserProfile', checkSavedUserProfile)
+
+    if (typeof checkSavedUserProfile === 'undefined')
+      throw new Error('No user profile to delete!')
+    else {
+      const management = new ManagementClient({
+        token: process.env.AUTH0_MANAGEMENT_API_TOKEN,
+        clientId: process.env.AUTH0_MANAGEMENT_CLIENT_ID,
+        domain: process.env.AUTH0_MANAGEMENT_URL || '',
+        scope: 'delete:users'
+      })
+      await management.deleteUser({
+        id: userProfileId
+      })
+      await db.getRepository(UserProfileEntity).delete({
+        id: userProfileId
+      })
+      return 'Deletion of user profile successful!'
+    }
+  }
+
   public async findUserProfile(verifiedUserId: string) {
     const db = await this.database.getConnection()
+
     const userProfile = await db.getRepository(UserProfileEntity).findOne({
       where: {
         id: verifiedUserId
@@ -41,7 +76,7 @@ export default class UserProfileAPI implements IUserProfileAPI {
     return userProfile
   }
 
-  public async createUserProfile(
+  public async createOrUpdateUserProfile(
     userProfileInput: UserProfileInput,
     challengeType: string
   ) {
@@ -57,17 +92,51 @@ export default class UserProfileAPI implements IUserProfileAPI {
     } = userProfileInput
     const db = await this.database.getConnection()
 
-    // TODO - make sure they their point's aren't reset when
-    // they update their profile or they don't cheat and just continually
-    // update their profile to get points.
-    const calculatedPoints = this.calculatePoints.calculate(
+    // * 1. check if challenge exists
+    let challenge: ChallengeEntity | undefined
+    challenge = await db
+      .getRepository(ChallengeEntity)
+      .findOne({ where: { userProfileId: id, type: TypeEnum.UserProfile } })
+    // * 1.a. Chek if challenge doesn't exist, create new challenge
+    if (typeof challenge === 'undefined') {
+      challenge = new ChallengeEntity()
+      challenge.sectionsCompleted = []
+      challenge.awardedPoints = 0
+    }
+    // * 1.b. Check if challenge is complete, if complete return Challenge
+    if (challenge.completed) return challenge
+
+    // * 2 Calculate points & update challenge entity
+    const {
+      updatedChallenge,
+      amountToAddToUserProfile
+    } = this.calculatePoints.calculate(
       userProfileInput,
+      challenge,
       challengeType
     )
-    // TODO - fix up so if user updates their profile later they'll get
-    // points for completing it
-    let userProfile = new UserProfileEntity()
-    userProfile.id = id as string
+
+    // * 3.check if user profile exists
+    const checkSavedUserProfile = await db
+      .getRepository(UserProfileEntity)
+      .findOne({
+        where: {
+          id
+        }
+      })
+    let userProfile
+    if (typeof checkSavedUserProfile === 'undefined') {
+      userProfile = new UserProfileEntity()
+      userProfile.id = id as string
+      userProfile.totalPoints = amountToAddToUserProfile
+      console.info(`Creating`)
+    } else {
+      userProfile = checkSavedUserProfile
+      // * 4 Update user profile total points
+      userProfile.totalPoints += amountToAddToUserProfile
+    }
+
+    // * 5 Update user profile attributes
     userProfile.motivations = motivations
     userProfile.challengeGoals = challengeGoals
     userProfile.username = username
@@ -80,11 +149,17 @@ export default class UserProfileAPI implements IUserProfileAPI {
     if (typeof lowResProfile == 'string')
       userProfile.lowResProfile = lowResProfile
 
-    userProfile.totalPoints = calculatedPoints as number
-
+    // * 6 Save and return user profile
     const savedUserProfile = await db
       .getRepository(UserProfileEntity)
       .save(userProfile)
+
+    // * 7 Save challenge entity
+    updatedChallenge.userProfile = savedUserProfile
+    const savedChallenge = await db
+      .getRepository(ChallengeEntity)
+      .save(updatedChallenge)
+    console.info(`User Profile - challenge ${savedChallenge.id} saved`)
 
     return savedUserProfile
   }

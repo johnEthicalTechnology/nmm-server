@@ -7,7 +7,6 @@ import { TYPES } from './inversifyTypes'
 // GRAPHQL
 import schema from './graphql/schema'
 // TYPES
-
 import { Context } from 'aws-lambda'
 import {
   IRecipeAPI,
@@ -46,7 +45,6 @@ export default class Server implements IServer {
       event,
       context
     }: {
-
       event: ExtendedAPIGatewayProxyEvent
       context: Context
     }) => {
@@ -55,6 +53,8 @@ export default class Server implements IServer {
       // TYPEORM related - how to set & why https://github.com/apollographql/apollo-server/issues/1479
       context.callbackWaitsForEmptyEventLoop = false
       // keep lambda warm & return quickly https://github.com/FidelLimited/serverless-plugin-warmup#javascript
+      console.info('Server - event', event)
+      console.info('Server - context', context)
       if (event.source === 'serverless-plugin-warmup') {
         console.log('WarmUp - Lambda is warm!')
         return 'Lambda is warm!'

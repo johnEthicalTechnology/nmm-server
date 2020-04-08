@@ -33,7 +33,7 @@ describe('Resolver - [Challenge]', () => {
             delete: jest.fn()
           }
         })
-        await userProfileAPI.createUserProfile(
+        await userProfileAPI.createOrUpdateUserProfile(
           {
             id: 'testuserid',
             motivations: [MotivationsEnum.AnimalWelfare],
@@ -43,7 +43,7 @@ describe('Resolver - [Challenge]', () => {
             challengeQuote: 'test challenge quote',
             lowResProfile: 'test user profile pic'
           },
-          'createUserProfile'
+          'createOrUpdateUserProfile'
         )
       })
       afterEach(() => {

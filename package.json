@@ -75,9 +75,11 @@
     "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
+    "@types/auth0": "^2.20.2",
     "apollo-datasource": "^0.6.3",
     "apollo-server": "^2.9.9",
     "apollo-server-lambda": "^2.9.9",
+    "auth0": "^2.24.0",
     "dotenv": "^8.2.0",
     "graphql": "^14.5.8",
     "graphql-tools": "^4.0.6",
@@ -89,7 +91,7 @@
     "pg": "^7.12.1",
     "pg-hstore": "^2.3.3",
     "reflect-metadata": "^0.1.13",
-    "serverless": "^1.61.3",
+    "serverless": "^1.67.0",
     "typeorm": "^0.2.20"
   }
 }

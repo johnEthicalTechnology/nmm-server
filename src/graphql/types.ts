@@ -29,6 +29,7 @@ export type Challenge = {
   sharedFriendsImages?: Maybe<SharedFriendsImage>,
   userProfileId?: Maybe<Scalars['String']>,
   recipeId?: Maybe<Scalars['Int']>,
+  completed?: Maybe<Scalars['Boolean']>,
 };
 
 export enum ChallengeDifficultyEnum {
@@ -81,19 +82,21 @@ export enum MotivationsEnum {
 
 export type Mutation = {
    __typename?: 'Mutation',
-  createUserProfile?: Maybe<UserProfile>,
+  createOrUpdateUserProfile?: Maybe<UserProfile>,
   createRecipe?: Maybe<Recipe>,
   deleteRecipe?: Maybe<Recipe>,
   createOrUpdateChallenge?: Maybe<Challenge>,
 };
 
-export type MutationCreateUserProfileArgs = {
+
+export type MutationCreateOrUpdateUserProfileArgs = {
   userProfileInput?: Maybe<UserProfileInput>
 };
 
 
 export type MutationCreateRecipeArgs = {
-  recipe?: Maybe<RecipeInput>
+  recipe?: Maybe<RecipeInput>,
+  createSecret: Scalars['String']
 };
 
 
@@ -129,7 +132,7 @@ export type QueryRecipeArgs = {
 
 
 export type QueryMeArgs = {
-  id: Scalars['String']
+  userProfileId: Scalars['String']
 };
 
 export type Recipe = {
@@ -148,6 +151,7 @@ export type Recipe = {
   ingredients: Array<Scalars['String']>,
   method: Array<Scalars['String']>,
   standardResolution: Scalars['String'],
+  videoUrl?: Maybe<Scalars['String']>,
 };
 
 export type RecipeAttribution = {
@@ -177,6 +181,7 @@ export type RecipeInput = {
   facebook?: Maybe<Scalars['String']>,
   instagram?: Maybe<Scalars['String']>,
   twitter?: Maybe<Scalars['String']>,
+  videoUrl?: Maybe<Scalars['String']>,
 };
 
 export enum SectionsCompletedEnum {
@@ -186,7 +191,13 @@ export enum SectionsCompletedEnum {
   SharedFriendsImage = 'SharedFriendsImage',
   SharedRecipe = 'SharedRecipe',
   ReadArticle = 'ReadArticle',
-  SharedArticle = 'SharedArticle'
+  SharedArticle = 'SharedArticle',
+  Motivations = 'Motivations',
+  ChallengeGoals = 'ChallengeGoals',
+  Username = 'Username',
+  Bio = 'Bio',
+  LowResProfile = 'LowResProfile',
+  ChallengeQuote = 'ChallengeQuote'
 }
 
 export type SharedFriendsImage = {
@@ -197,7 +208,8 @@ export type SharedFriendsImage = {
 
 export enum TypeEnum {
   Recipe = 'Recipe',
-  Article = 'Article'
+  Article = 'Article',
+  UserProfile = 'UserProfile'
 }
 
 export type UserProfile = {
